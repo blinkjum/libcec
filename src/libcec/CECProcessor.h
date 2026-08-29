@@ -143,7 +143,7 @@ namespace CEC
 
       bool StartBootloader(const char *strPort = NULL);
       bool PingAdapter(void);
-      void HandlePoll(cec_logical_address initiator, cec_logical_address destination);
+      void HandlePoll(const cec_command &command);
       bool HandleReceiveFailed(cec_logical_address initiator);
 
       bool GetDeviceInformation(const char *strPort, libcec_configuration *config, uint32_t iTimeoutMs = CEC_DEFAULT_CONNECT_TIMEOUT);

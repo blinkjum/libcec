@@ -479,6 +479,18 @@ void CLibCEC::AddCommand(const cec_command &command)
     (*it)->QueueAddCommand(command);
 }
 
+void CLibCEC::RawFrame(const cec_command &command,
+                       const cec_raw_frame_direction direction,
+                       const cec_raw_frame_status status,
+                       const int64_t timestamp)
+{
+  // Keep raw-frame delivery independent from logical-address ownership. A
+  // sniffer must see frames between other devices as well as frames addressed
+  // to the current libCEC client.
+  for (std::vector<CECClientPtr>::iterator it = m_clients.begin(); it != m_clients.end(); it++)
+    (*it)->QueueRawFrame(command, direction, status, timestamp);
+}
+
 bool CLibCEC::CommandHandlerCB(const cec_command &command)
 {
   // send the command to all clients

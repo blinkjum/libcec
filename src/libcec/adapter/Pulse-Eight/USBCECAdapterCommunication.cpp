@@ -316,7 +316,15 @@ bool CUSBCECAdapterCommunication::HandlePoll(const CCECAdapterMessage &msg)
       if (!m_bWaitingForAck[msg.Destination()] && !msg.IsEOM())
       {
         if (m_callback)
-          m_callback->HandlePoll(msg.Initiator(), msg.Destination());
+        {
+          // A failed/NACKed polling header is delivered by the adapter as a
+          // FRAME_START without a following data byte. Preserve the complete
+          // header state here: the old callback only forwarded both logical
+          // addresses and discarded the raw ACK/EOM bits.
+          cec_command poll;
+          msg.PushToCecCommand(poll);
+          m_callback->HandlePoll(poll);
+        }
       }
       else
         m_bWaitingForAck[msg.Destination()] = false;

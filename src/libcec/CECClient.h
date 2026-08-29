@@ -137,8 +137,25 @@ namespace CEC
       m_keepResult(true),
       m_result(0),
       m_bSucceeded(false) {
-        (void)unused;
+      (void)unused;
       }
+
+    CCallbackWrap(const cec_command& command,
+                  const cec_raw_frame_direction direction,
+                  const cec_raw_frame_status status,
+                  const int64_t timestamp) :
+      m_type(CEC_CB_RAW_FRAME),
+      m_command(command),
+      m_rawDirection(direction),
+      m_rawStatus(status),
+      m_rawTimestamp(timestamp),
+      m_alertType(CEC_ALERT_SERVICE_DEVICE),
+      m_menuState(CEC_MENU_STATE_ACTIVATED),
+      m_bActivated(false),
+      m_logicalAddress(CECDEVICE_UNKNOWN),
+      m_keepResult(false),
+      m_result(0),
+      m_bSucceeded(false) {}
 
     int Result(uint32_t iTimeout)
     {
@@ -170,9 +187,13 @@ namespace CEC
       CEC_CB_MENU_STATE,
       CEC_CB_SOURCE_ACTIVATED,
       CEC_CB_COMMAND_HANDLER,
+      CEC_CB_RAW_FRAME,
     } m_type;
 
     cec_command                  m_command;
+    cec_raw_frame_direction      m_rawDirection;
+    cec_raw_frame_status         m_rawStatus;
+    int64_t                      m_rawTimestamp;
     cec_keypress                 m_key;
     cec_log_message_cpp          m_message;
     libcec_alert                 m_alertType;
@@ -349,6 +370,10 @@ namespace CEC
     int QueueMenuStateChanged(const cec_menu_state newState); //TODO
     void QueueSourceActivated(bool bActivated, const cec_logical_address logicalAddress);
     int QueueCommandHandler(const cec_command& command);
+    void QueueRawFrame(const cec_command& command,
+                       const cec_raw_frame_direction direction,
+                       const cec_raw_frame_status status,
+                       const int64_t timestamp);
 
     // callbacks
     virtual void                  Alert(const libcec_alert type, const libcec_parameter &param) { QueueAlert(type, param); }
@@ -489,6 +514,10 @@ namespace CEC
     int  CallbackMenuStateChanged(const cec_menu_state newState);
     void CallbackSourceActivated(bool bActivated, const cec_logical_address logicalAddress);
     int CallbackCommandHandler(const cec_command &command);
+    void CallbackRawFrame(const cec_command &command,
+                          const cec_raw_frame_direction direction,
+                          const cec_raw_frame_status status,
+                          const int64_t timestamp);
 
     uint32_t DoubleTapTimeoutMS(void);
 

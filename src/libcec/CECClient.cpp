@@ -1829,6 +1829,14 @@ int CCECClient::QueueCommandHandler(const cec_command& command)
   return result;
 }
 
+void CCECClient::QueueRawFrame(const cec_command& command,
+                               const cec_raw_frame_direction direction,
+                               const cec_raw_frame_status status,
+                               const int64_t timestamp)
+{
+  m_callbackCalls.Push(new CCallbackWrap(command, direction, status, timestamp));
+}
+
 void* CCECClient::Process(void)
 {
   CCallbackWrap* cb(NULL);
@@ -1867,6 +1875,9 @@ void* CCECClient::Process(void)
           if (!keepResult)
             LIB_CEC->AddLog(CEC_LOG_WARNING, "Command callback timeout occurred !");
 	  break;
+        case CCallbackWrap::CEC_CB_RAW_FRAME:
+          CallbackRawFrame(cb->m_command, cb->m_rawDirection, cb->m_rawStatus, cb->m_rawTimestamp);
+          break;
         default:
           break;
         }
@@ -1984,6 +1995,23 @@ int CCECClient::CallbackCommandHandler(const cec_command &command)
     return m_configuration.callbacks->commandHandler(m_configuration.callbackParam, &command);
   }
   return 0;
+}
+
+void CCECClient::CallbackRawFrame(const cec_command &command,
+                                  const cec_raw_frame_direction direction,
+                                  const cec_raw_frame_status status,
+                                  const int64_t timestamp)
+{
+  CLockObject lock(m_cbMutex);
+  if (!!m_configuration.callbacks &&
+      !!m_configuration.callbacks->rawFrame)
+  {
+    m_configuration.callbacks->rawFrame(m_configuration.callbackParam,
+                                        &command,
+                                        direction,
+                                        status,
+                                        timestamp);
+  }
 }
 
 bool CCECClient::AudioEnable(bool enable)

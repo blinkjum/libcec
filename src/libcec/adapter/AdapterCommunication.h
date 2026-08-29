@@ -65,10 +65,9 @@ namespace CEC
 
     /*!
      * @brief Callback method for IAdapterCommunication, called when a poll was received.
-     * @param initiator The initiator that sent the poll.
-     * @param destination The destination of the poll message.
+     * @param command The complete polling command, including the observed ACK and EOM bits.
      */
-    virtual void HandlePoll(cec_logical_address initiator, cec_logical_address destination) = 0;
+    virtual void HandlePoll(const cec_command &command) = 0;
 
     /*!
      * @brief Callback method for IAdapterCommunication, called when a receive failed message was received.

@@ -56,6 +56,23 @@ using namespace CEC;
 
 #define ToString(x) CCECTypeUtils::ToString(x)
 
+static cec_raw_frame_status RawFrameStatus(const cec_adapter_message_state state)
+{
+  switch (state)
+  {
+  case ADAPTER_MESSAGE_STATE_SENT:
+    return CEC_RAW_FRAME_STATUS_SENT;
+  case ADAPTER_MESSAGE_STATE_SENT_NOT_ACKED:
+    return CEC_RAW_FRAME_STATUS_SENT_NOT_ACKED;
+  case ADAPTER_MESSAGE_STATE_SENT_ACKED:
+    return CEC_RAW_FRAME_STATUS_SENT_ACKED;
+  case ADAPTER_MESSAGE_STATE_ERROR:
+    return CEC_RAW_FRAME_STATUS_ERROR;
+  default:
+    return CEC_RAW_FRAME_STATUS_UNKNOWN;
+  }
+}
+
 CCECStandbyProtection::CCECStandbyProtection(CCECProcessor* processor) :
     m_processor(processor) {}
 CCECStandbyProtection::~CCECStandbyProtection(void) {}
@@ -540,6 +557,10 @@ bool CCECProcessor::Transmit(const cec_command &data, bool bIsReply)
     adapterState = !IsStopped() && m_communication && m_communication->IsOpen() ?
         m_communication->Write(transmitData, bRetry, iLineTimeout, bIsReply) :
         ADAPTER_MESSAGE_STATE_ERROR;
+    m_libcec->RawFrame(transmitData,
+                       CEC_RAW_FRAME_DIRECTION_TX,
+                       RawFrameStatus(adapterState),
+                       GetTimeMs());
     iLineTimeout = m_iRetryLineTimeout;
   }
 
@@ -562,6 +583,11 @@ void CCECProcessor::TransmitAbort(cec_logical_address source, cec_logical_addres
 
 void CCECProcessor::ProcessCommand(const cec_command &command)
 {
+  m_libcec->RawFrame(command,
+                     CEC_RAW_FRAME_DIRECTION_RX,
+                     CEC_RAW_FRAME_STATUS_INCOMING,
+                     GetTimeMs());
+
   // log the command
   m_libcec->AddLog(CEC_LOG_TRAFFIC, ToString(command).c_str());
 
@@ -668,11 +694,16 @@ bool CCECProcessor::PingAdapter(void)
   return m_communication->PingAdapter();
 }
 
-void CCECProcessor::HandlePoll(cec_logical_address initiator, cec_logical_address destination)
+void CCECProcessor::HandlePoll(const cec_command &poll)
 {
-  CCECBusDevice *device = m_busDevices->At(destination);
+  m_libcec->RawFrame(poll,
+                     CEC_RAW_FRAME_DIRECTION_RX,
+                     CEC_RAW_FRAME_STATUS_INCOMING,
+                     GetTimeMs());
+
+  CCECBusDevice *device = m_busDevices->At(poll.destination);
   if (device)
-    device->HandlePollFrom(initiator);
+    device->HandlePollFrom(poll.initiator);
 }
 
 bool CCECProcessor::HandleReceiveFailed(cec_logical_address initiator)

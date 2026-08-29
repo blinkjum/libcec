@@ -240,7 +240,9 @@ if(WIN32)
     # error code '23'" (RPC_S_SERVER_UNAVAILABLE). It took out two release
     # builds in a row. /Z7 removes the server from the picture entirely; the
     # flags in support/windows/cmake/*-flag-overrides.cmake match this.
-    cmake_policy(SET CMP0141 NEW)
+    if(POLICY CMP0141)
+      cmake_policy(SET CMP0141 NEW)
+    endif()
     set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "Embedded")
 
     # cec.pdb next to cec.dll is the linker's, emitted for the configurations

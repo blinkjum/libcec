@@ -146,6 +146,10 @@ namespace CEC
 
       void AddLog(const cec_log_level level, const char *strFormat, ...);
       void AddCommand(const cec_command &command);
+      void RawFrame(const cec_command &command,
+                    const cec_raw_frame_direction direction,
+                    const cec_raw_frame_status status,
+                    const int64_t timestamp);
       bool CommandHandlerCB(const cec_command &command);
       uint16_t CheckKeypressTimeout(void);
       void Alert(const libcec_alert type, const libcec_parameter &param);

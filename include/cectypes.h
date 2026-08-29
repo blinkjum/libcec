@@ -1474,6 +1474,24 @@ struct cec_adapter_stats
   unsigned int rx_error;
 };
 
+/** Direction of a frame reported through the structured raw-frame callback. */
+typedef enum cec_raw_frame_direction
+{
+  CEC_RAW_FRAME_DIRECTION_RX = 0,
+  CEC_RAW_FRAME_DIRECTION_TX = 1
+} cec_raw_frame_direction;
+
+/** Result/state associated with a structured raw-frame callback. */
+typedef enum cec_raw_frame_status
+{
+  CEC_RAW_FRAME_STATUS_UNKNOWN = 0,
+  CEC_RAW_FRAME_STATUS_INCOMING,
+  CEC_RAW_FRAME_STATUS_SENT,
+  CEC_RAW_FRAME_STATUS_SENT_NOT_ACKED,
+  CEC_RAW_FRAME_STATUS_SENT_ACKED,
+  CEC_RAW_FRAME_STATUS_ERROR
+} cec_raw_frame_status;
+
 typedef struct libcec_configuration libcec_configuration;
 
 typedef struct ICECCallbacks
@@ -1544,6 +1562,24 @@ typedef struct ICECCallbacks
    */
   int (CEC_CDECL* commandHandler)(void* cbparam, const cec_command* command);
 
+  /**
+   * @brief Transfer every structured CEC frame seen by libCEC.
+   *
+   * This callback covers complete received frames, received polling headers,
+   * and native transmit attempts. It is separate from logMessage so clients
+   * do not need to parse textual logs.
+   *
+   * @param command Structured frame; opcode_set == 0 denotes a poll.
+   * @param direction RX or TX.
+   * @param status The native frame state/result.
+   * @param timestamp Monotonic libCEC timestamp in milliseconds.
+   */
+  void (CEC_CDECL* rawFrame)(void* cbparam,
+                             const cec_command* command,
+                             const cec_raw_frame_direction direction,
+                             const cec_raw_frame_status status,
+                             const int64_t timestamp);
+
 #ifdef __cplusplus
    ICECCallbacks(void) { Clear(); }
   ~ICECCallbacks(void) { Clear(); };
@@ -1558,6 +1594,7 @@ typedef struct ICECCallbacks
     menuStateChanged     = nullptr;
     sourceActivated      = nullptr;
     commandHandler       = nullptr;
+    rawFrame             = nullptr;
   }
 #endif
 } ICECCallbacks;
