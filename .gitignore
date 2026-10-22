@@ -1,5 +1,7 @@
 /.vscode
 /build
+/build-custom-x64/
+/build-occupancy-x64/
 /cmake-build
 /.cproject
 /.project

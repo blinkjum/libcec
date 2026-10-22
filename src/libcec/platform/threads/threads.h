@@ -78,13 +78,31 @@ namespace CEC
       if (m_bRunning)
         return false;
 
-      // reap a previous run before starting another one
+      // A joinable thread is safe to reap only after ThreadHandler has
+      // published completion. In particular, never join a pending async start
+      // while holding the very mutex that its ThreadHandler needs to enter.
+      if (m_thread.joinable() && !m_bStopped)
+        return false;
       if (m_thread.joinable())
         m_thread.join();
 
       m_bStop    = false;
       m_bStarted = false;
-      m_thread   = std::thread(&CThread::ThreadHandler, this);
+      m_bStopped = false;
+      // Reserve the run BEFORE launching it. IsRunning()/StopThread() must
+      // include the starting state, not just an already-entered Process().
+      m_bRunning = true;
+      try
+      {
+        m_thread = std::thread(&CThread::ThreadHandler, this);
+      }
+      catch (...)
+      {
+        m_bRunning = false;
+        m_bStopped = true;
+        m_threadCondition.Broadcast();
+        return false;
+      }
 
       // wait for the thread to have reached the handler, not for it to be running:
       // a thread that is asked to stop before it starts never runs at all

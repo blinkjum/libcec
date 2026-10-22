@@ -71,6 +71,16 @@ extern DECLSPEC int libcec_set_inactive_view(libcec_connection_t connection);
 extern DECLSPEC int libcec_set_menu_state(libcec_connection_t connection, CEC_NAMESPACE cec_menu_state state, int bSendUpdate);
 extern DECLSPEC int libcec_transmit(libcec_connection_t connection, const CEC_NAMESPACE cec_command* data);
 extern DECLSPEC int libcec_set_logical_address(libcec_connection_t connection, CEC_NAMESPACE cec_logical_address iLogicalAddress);
+/** Test extension: force Pulse-Eight hardware ACKs for LA bits 0..14.
+ * Requires monitor-only clients, skips address allocation and sends no
+ * announcement. Zero releases every occupied LA; bit 15 is invalid.
+ * Returns 1 on adapter command acceptance, 0 on failure, -1 for null connection.
+ */
+extern DECLSPEC int libcec_set_test_ack_mask(libcec_connection_t connection, uint16_t mask);
+/** Last adapter-accepted test ACK mask, or -1 when closed/unsupported.
+ * This is configuration state, not an electrical ACK measurement.
+ */
+extern DECLSPEC int libcec_get_test_ack_mask(libcec_connection_t connection);
 extern DECLSPEC int libcec_set_physical_address(libcec_connection_t connection, uint16_t iPhysicalAddress);
 extern DECLSPEC int libcec_set_osd_string(libcec_connection_t connection, CEC_NAMESPACE cec_logical_address iLogicalAddress, CEC_NAMESPACE cec_display_control duration, const char* strMessage);
 extern DECLSPEC int libcec_switch_monitoring(libcec_connection_t connection, int bEnable);

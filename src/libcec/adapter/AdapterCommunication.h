@@ -145,6 +145,10 @@ namespace CEC
 
     virtual bool SetLogicalAddresses(const cec_logical_addresses &addresses) = 0;
 
+    // Only backends that can set an ACK mask without claiming addresses may
+    // enable the test extension. SoC/kernel allocation APIs must not be used.
+    virtual bool SupportsTestAckMask(void) const { return false; }
+
     virtual cec_logical_addresses GetLogicalAddresses(void) const = 0;
 
     /*!

@@ -159,6 +159,8 @@ namespace CEC
 
       bool IsRunningLatestFirmware(void);
       void SwitchMonitoring(bool bSwitchTo);
+      bool SetTestAckMask(uint16_t mask);
+      int GetTestAckMask(void);
 
       bool AllocateLogicalAddresses(CECClientPtr client);
 
@@ -190,6 +192,7 @@ namespace CEC
       CCECDeviceMap *                             m_busDevices;
       std::map<cec_logical_address, CECClientPtr> m_clients;
       bool                                        m_bMonitor;
+      uint16_t                                    m_testAckMask;
       CCECAllocateLogicalAddress*                 m_addrAllocator;
       bool                                        m_bStallCommunication;
       CCECStandbyProtection*                      m_connCheck;

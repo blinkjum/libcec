@@ -48,7 +48,13 @@ if(WIN32)
 
   set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 
-  if("${MSVC_C_ARCHITECTURE_ID}" STREQUAL "X86")
+  if(MINGW AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(WIN64 1)
+    set(LIB_INFO "${LIB_INFO} (x64)")
+  elseif(MINGW AND CMAKE_SIZEOF_VOID_P EQUAL 4)
+    set(LIB_INFO "${LIB_INFO} (x86)")
+    add_definitions(-D_USE_32BIT_TIME_T)
+  elseif("${MSVC_C_ARCHITECTURE_ID}" STREQUAL "X86")
     set(LIB_INFO "${LIB_INFO} (x86)")
     add_definitions(-D_USE_32BIT_TIME_T)
     # force python2 for eventghost

@@ -138,7 +138,8 @@ set(CEC_HEADERS devices/CECRecordingDevice.h
                 implementations/RHCommandHandler.h
                 implementations/PHCommandHandler.h
                 implementations/AQCommandHandler.h
-                CECProcessor.h)
+                CECProcessor.h
+                TestAckMask.h)
 source_group("Header Files" FILES ${CEC_HEADERS})
 
 # platform and device specific
@@ -205,11 +206,25 @@ set_property(TARGET libobj PROPERTY POSITION_INDEPENDENT_CODE 1)
 
 
 add_library(cec-shared SHARED $<TARGET_OBJECTS:libobj>)
+if(WIN32)
+  set_target_properties(cec-shared PROPERTIES PREFIX "")
+endif()
 set_target_properties(cec-shared PROPERTIES
     VERSION   ${LIBCEC_VERSION_MAJOR}.${LIBCEC_VERSION_MINOR}.${LIBCEC_VERSION_PATCH}
     SOVERSION ${LIBCEC_VERSION_MAJOR}
     OUTPUT_NAME cec)
 target_link_libraries(cec-shared ${cec_depends})
+
+option(ENABLE_TEST_ACK_MASK_TESTS "Build the native test ACK-mask regression check" OFF)
+if(ENABLE_TEST_ACK_MASK_TESTS)
+  add_executable(cec-test-ack-mask tests/TestAckMask.cpp)
+  add_executable(cec-test-threads tests/TestThreads.cpp)
+  target_include_directories(cec-test-threads PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  if(MINGW)
+    target_link_options(cec-test-ack-mask PRIVATE -static)
+    target_link_options(cec-test-threads PRIVATE -static)
+  endif()
+endif()
 
 
 if(NOT DISABLE_STATIC)

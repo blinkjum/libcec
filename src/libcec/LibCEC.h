@@ -141,6 +141,8 @@ namespace CEC
       static cec_device_type GetType(cec_logical_address address);
       static uint16_t GetMaskForType(cec_logical_address address);
       static uint16_t GetMaskForType(cec_device_type type);
+      bool SetTestAckMask(uint16_t mask);
+      int GetTestAckMask(void);
 
       bool GetDeviceInformation(const char *strPort, libcec_configuration *config, uint32_t iTimeoutMs = CEC_DEFAULT_CONNECT_TIMEOUT);
 

@@ -249,6 +249,16 @@ bool CLibCEC::SetLogicalAddress(cec_logical_address iLogicalAddress)
   return m_client ? m_client->SetLogicalAddress(iLogicalAddress) : false;
 }
 
+bool CLibCEC::SetTestAckMask(uint16_t mask)
+{
+  return m_cec ? m_cec->SetTestAckMask(mask) : false;
+}
+
+int CLibCEC::GetTestAckMask(void)
+{
+  return m_cec ? m_cec->GetTestAckMask() : -1;
+}
+
 bool CLibCEC::SetPhysicalAddress(uint16_t iPhysicalAddress /* = CEC_DEFAULT_PHYSICAL_ADDRESS */)
 {
   return m_client ? m_client->SetPhysicalAddress(iPhysicalAddress) : false;

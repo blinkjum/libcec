@@ -1634,6 +1634,8 @@ bool CCECClient::SetDevicePhysicalAddress(const uint16_t iPhysicalAddress)
 
 bool CCECClient::SwitchMonitoring(bool bEnable)
 {
+  if (m_processor && m_processor->GetTestAckMask() > 0)
+    return bEnable; // Keep monitor-only routing until the test addresses are released.
   LIB_CEC->AddLog(CEC_LOG_NOTICE, "== %s monitoring mode ==", bEnable ? "enabling" : "disabling");
 
   if (m_processor)

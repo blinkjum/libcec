@@ -33,6 +33,7 @@
 
 #include "env.h"
 #include "CECProcessor.h"
+#include "TestAckMask.h"
 
 #include "adapter/AdapterFactory.h"
 #include "devices/CECBusDevice.h"
@@ -109,6 +110,7 @@ CCECProcessor::CCECProcessor(CLibCEC *libcec) :
     m_iRetryLineTimeout(3),
     m_iLastTransmission(0),
     m_bMonitor(true),
+    m_testAckMask(0),
     m_addrAllocator(NULL),
     m_bStallCommunication(false),
     m_connCheck(NULL)
@@ -146,6 +148,10 @@ bool CCECProcessor::Start(const char *strPort, uint16_t iBaudRate /* = CEC_SERIA
 
 void CCECProcessor::Close(void)
 {
+  // Release the test mask while the USB reader still delivers command replies.
+  // The adapter's Close() also clears all ACKs if this attempt fails.
+  if (m_testAckMask)
+    SetTestAckMask(0);
   // mark as uninitialised
   SetCECInitialised(false);
 
@@ -158,6 +164,7 @@ void CCECProcessor::Close(void)
   // close the connection
   CLockObject lock(m_mutex);
   SafeDelete(m_communication);
+  m_testAckMask = 0;
 }
 
 void CCECProcessor::ResetMembers(void)
@@ -169,6 +176,7 @@ void CCECProcessor::ResetMembers(void)
   m_iStandardLineTimeout = 3;
   m_iRetryLineTimeout = 3;
   m_iLastTransmission = 0;
+  m_testAckMask = 0;
   m_busDevices->ResetDeviceStatus();
 }
 
@@ -625,7 +633,50 @@ bool CCECProcessor::ClearLogicalAddresses(void)
 
 bool CCECProcessor::SetLogicalAddresses(const cec_logical_addresses &addresses)
 {
+  if (m_testAckMask && addresses.AckMask() != m_testAckMask)
+    return false;
   return m_communication ? m_communication->SetLogicalAddresses(addresses) : false;
+}
+
+bool CCECProcessor::SetTestAckMask(uint16_t mask)
+{
+  CLockObject lock(m_mutex);
+  if ((mask & 0x8000) || !m_bInitialised || !m_communication ||
+      !m_communication->IsOpen() || !m_communication->SupportsTestAckMask() ||
+      !m_bMonitor || !m_clients.empty())
+    return false;
+
+  const std::vector<CECClientPtr> clients = m_libcec->GetClients();
+  for (const auto& client : clients)
+    if (client->GetConfiguration()->bMonitorOnly != 1)
+      return false;
+
+  cec_logical_addresses addresses;
+  BuildTestAckAddresses(mask, addresses);
+
+  // Bypass the allocator and its self-polling. The USB adapter generates ACKs
+  // itself; the GUI and callback thread never schedule individual ACK bits.
+  if (!m_communication->SetControlledMode(true) ||
+      !m_communication->SetLogicalAddresses(addresses))
+    return false;
+
+  // Track the mask of the address list passed to the adapter, rather than just
+  // echoing the request. This remains configuration state, not a wire readback.
+  m_testAckMask = m_communication->GetLogicalAddresses().AckMask();
+  if (m_testAckMask != mask)
+  {
+    m_libcec->AddLog(CEC_LOG_ERROR, "test ACK mask mismatch: requested %04X, accepted %04X", mask, m_testAckMask);
+    return false;
+  }
+  m_libcec->AddLog(CEC_LOG_NOTICE, "test ACK mask accepted by adapter: %04X", m_testAckMask);
+  return true;
+}
+
+int CCECProcessor::GetTestAckMask(void)
+{
+  CLockObject lock(m_mutex);
+  return m_communication && m_communication->IsOpen() &&
+         m_communication->SupportsTestAckMask() ? m_testAckMask : -1;
 }
 
 bool CCECProcessor::StandbyDevices(const cec_logical_address initiator, const CECDEVICEVEC &devices)
@@ -888,6 +939,12 @@ bool CCECProcessor::RegisterClient(CECClientPtr client)
   if (configuration.bMonitorOnly == 1)
     return true;
 
+  if (m_testAckMask)
+  {
+    m_libcec->AddLog(CEC_LOG_ERROR, "release the test ACK mask before registering a device role");
+    return false;
+  }
+
   if (!CECInitialised())
   {
     m_libcec->AddLog(CEC_LOG_ERROR, "failed to register a new CEC client: CEC processor is not initialised");
@@ -1140,6 +1197,8 @@ bool CCECProcessor::IsRunningLatestFirmware(void)
 
 void CCECProcessor::SwitchMonitoring(bool bSwitchTo)
 {
+  if (m_testAckMask)
+    return;
   {
     CLockObject lock(m_mutex);
     m_bMonitor = bSwitchTo;
@@ -1150,6 +1209,8 @@ void CCECProcessor::SwitchMonitoring(bool bSwitchTo)
 
 void CCECProcessor::HandleLogicalAddressLost(cec_logical_address oldAddress)
 {
+  if (m_testAckMask)
+    return;
   m_libcec->AddLog(CEC_LOG_NOTICE, "logical address %x was taken by another device, allocating a new address", oldAddress);
 
   // stall outgoing messages until we know our new LA

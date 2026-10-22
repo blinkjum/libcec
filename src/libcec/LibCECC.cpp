@@ -154,6 +154,18 @@ int libcec_set_physical_address(libcec_connection_t connection, uint16_t iPhysic
       -1;
 }
 
+int libcec_set_test_ack_mask(libcec_connection_t connection, uint16_t mask)
+{
+  ICECAdapter* adapter = static_cast<ICECAdapter*>(connection);
+  return adapter ? (static_cast<CLibCEC*>(adapter)->SetTestAckMask(mask) ? 1 : 0) : -1;
+}
+
+int libcec_get_test_ack_mask(libcec_connection_t connection)
+{
+  ICECAdapter* adapter = static_cast<ICECAdapter*>(connection);
+  return adapter ? static_cast<CLibCEC*>(adapter)->GetTestAckMask() : -1;
+}
+
 int libcec_power_on_devices(libcec_connection_t connection, cec_logical_address address)
 {
   ICECAdapter* adapter = static_cast<ICECAdapter*>(connection);

@@ -78,6 +78,7 @@ namespace CEC
 
     bool StartBootloader(void);
     bool SetLogicalAddresses(const cec_logical_addresses &addresses);
+    bool SupportsTestAckMask(void) const { return true; }
     cec_logical_addresses GetLogicalAddresses(void) const;
     bool PingAdapter(void);
     uint16_t GetFirmwareVersion(void);

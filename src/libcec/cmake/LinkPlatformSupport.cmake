@@ -2,6 +2,11 @@
 
 list(APPEND cec_depends ${CMAKE_THREAD_LIBS_INIT})
 
+if(MINGW)
+  # MSVC receives these through #pragma comment(lib), which MinGW ignores.
+  list(APPEND cec_depends setupapi cfgmgr32 ws2_32)
+endif()
+
 # lockdev
 if (HAVE_LOCKDEV)
   list(APPEND cec_depends lockdev)
